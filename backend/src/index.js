@@ -284,9 +284,13 @@ app.use((err, req, res, next) => {
 /* eslint-enable no-unused-vars */
 
 // ===== START =====
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`[auth] listening on http://localhost:${PORT}`)
-})
+// Para desenvolvimento local
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000
+  app.listen(PORT, () => {
+    console.log(`[auth] listening on http://localhost:${PORT}`)
+  })
+}
 
+// Exportar para Vercel serverless
 export default app

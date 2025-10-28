@@ -1,8 +1,12 @@
-# Deploy do MoneyMapp no Render
+# Deploy do MoneyMapp no Render ou Vercel
 
-Este guia descreve como hospedar **o banco de dados MySQL** e o **backend Node/Express** do MoneyMapp no [Render](https://render.com/).
+Este guia descreve como hospedar **o banco de dados MySQL** e o **backend Node/Express** do MoneyMapp tanto no [Render](https://render.com/) (recomendado para serviços persistentes) quanto na [Vercel](https://vercel.com/) (serverless).
 
-## Visão geral da infraestrutura
+---
+
+## Opção A: Deploy no Render (recomendado para backend tradicional)
+
+### Visão geral da infraestrutura
 
 - **Database**: instância gerenciada de **MySQL 8** no Render (outra opção é apontar para um MySQL externo compatível).
 - **Backend API**: serviço "Web Service" Node.js apontando para a pasta `backend/` deste repositório.
@@ -156,3 +160,82 @@ databases:
 - [ ] Plano do serviço compatível com a carga e com os cron jobs.
 
 Com isso, o backend e o banco do MoneyMapp estarão rodando no Render. Ajuste limites de plano, monitoramento e backups conforme sua necessidade de produção.
+
+---
+
+## Opção B: Deploy do backend na Vercel (serverless)
+
+A Vercel é ideal para APIs serverless com baixa latência e escala automática, porém **não gerencia bancos de dados MySQL**. Você precisará manter o banco em um provedor externo (Render, PlanetScale, Aiven, Railway etc.).
+
+### 1. Preparar o backend para serverless
+
+Os arquivos `backend/vercel.json` e `backend/src/index.js` já estão ajustados para rodar na Vercel:
+- **`vercel.json`**: define o build com `@vercel/node` e roteia todas as requisições para `src/index.js`.
+- **`src/index.js`**: condicionalmente executa `app.listen()` apenas fora de produção; em produção, exporta o `app` para a Vercel invocar como função.
+
+### 2. Criar banco de dados externo
+
+- Use um serviço gerenciado (ex.: [PlanetScale](https://planetscale.com), [Aiven MySQL](https://aiven.io), ou o próprio Render).
+- Obtenha a `DATABASE_URL` completa com SSL (`mysql://USER:PASS@HOST:PORT/DB?sslaccept=strict`).
+
+### 3. Criar projeto na Vercel
+
+1. Acesse o dashboard da Vercel e clique em **Add New ➜ Project**.
+2. Conecte o repositório `MoneyMap-v3` via GitHub.
+3. Configurações:
+   - **Root Directory**: `backend`
+   - **Framework Preset**: Other (ou deixe auto-detect)
+   - **Build Command**: `npm install && npx prisma generate`
+   - **Output Directory**: deixe vazio (serverless não precisa)
+   - **Install Command**: `npm install`
+4. **Environment Variables**: adicione pelo menos:
+   - `DATABASE_URL` (connection string do banco externo)
+   - `JWT_SECRET` (string aleatória longa)
+   - `FRONTEND_URL` (URL do frontend na Vercel, ex.: `https://app.seudominio.com`)
+   - `CORS_ORIGINS` (domínios permitidos separados por vírgula)
+   - `LOG_BODY=false` (opcional)
+   - SMTP vars (se desejar e-mails)
+5. Clique em **Deploy**.
+
+### 4. Executar migrações
+
+Como a Vercel não oferece "post-deploy command" nativamente para serverless, rode as migrações manualmente após o primeiro deploy:
+
+```bash
+# Clone o repo localmente ou use a Vercel CLI
+cd backend
+DATABASE_URL="mysql://..." npx prisma migrate deploy
+DATABASE_URL="mysql://..." node prisma/seed.js
+```
+
+Alternativamente, use um **Cron Job externo** (GitHub Actions, Render Cron Job) para aplicar migrações a cada release.
+
+### 5. Limitações de serverless
+
+- **Cron jobs internos (`node-cron`)** não funcionam; configure jobs externos via [Vercel Cron](https://vercel.com/docs/cron-jobs) ou endpoints HTTP batidos periodicamente.
+- **Conexões de banco persistentes**: em serverless, cada request pode abrir uma nova conexão. Configure `connection_limit` baixo no Prisma (`?connection_limit=5`) para evitar esgotar o pool do banco.
+- **Cold starts**: a primeira requisição pode ter latência adicional; considere "warmup" se necessário.
+
+### 6. Validar o deploy
+
+- Abra `https://<nome-do-projeto>.vercel.app/health` e confirme `{"ok":true}`.
+- Teste rotas de autenticação (`/auth/login`) e transações.
+
+---
+
+## Comparação: Render vs Vercel para backend
+
+| Critério | Render | Vercel |
+|----------|--------|--------|
+| **Tipo** | Servidor persistente | Serverless |
+| **Banco gerenciado** | ✅ MySQL nativo | ❌ Requer externo |
+| **Cron jobs** | ✅ Nativo | ⚠️ Precisa de config extra |
+| **Custo inicial** | Free tier limitado | Free tier generoso |
+| **Latência** | Conexão sempre ativa | Cold start ocasional |
+| **Escala** | Vertical (upgrade de plano) | Automática horizontal |
+
+**Recomendação**: Use **Render** se precisar de jobs agendados e banco integrado; use **Vercel** se busca simplicidade e escala automática para APIs leves com banco externo.
+
+---
+
+Com ambas as opções documentadas, escolha a que melhor se encaixa no seu caso de uso e siga o fluxo correspondente.

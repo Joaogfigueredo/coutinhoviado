@@ -30,6 +30,10 @@ npm run dev             # http://localhost:5173
 
 Quer publicar o backend (Node + Prisma) e o banco MySQL no Render? Consulte o guia completo em [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) com todos os passos, variáveis de ambiente e sugestões de `render.yaml`.
 
+## Deploy do backend na Vercel (serverless)
+
+Prefere rodar a API como serverless? O guia [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) também documenta a **Opção B** para publicar o backend na Vercel (com banco externo e ajustes para cron jobs).
+
 ## Deploy do frontend na Vercel
 
 Para hospedar a SPA React/Vite em produção, siga o passo a passo de [DEPLOY_VERCEL.md](./DEPLOY_VERCEL.md). O guia cobre build, variáveis (`VITE_API_URL`), roteamento (`vercel.json`) e dicas de domínio.
