@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-br">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MoneyMapp Auth API</title>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px;">
+    <h1>MoneyMapp Auth API</h1>
+    <p>Servidor rodando. Endpoints úteis:</p>
+    <ul>
+      <li><a href="/health">/health</a> — testa conexão com o banco.</li>
+    </ul>
+    <h2>Cadastro</h2>
+    <pre>POST /auth/register
+Content-Type: application/json
+
+{"name":"Ana","email":"ana@example.com","password":"Senha123456"}
+    </pre>
+    <p>Use Insomnia/Postman ou o comando <code>curl</code> do README.</p>
+  </body>
+</html>

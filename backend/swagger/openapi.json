@@ -1,0 +1,915 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MoneyMap API",
+    "version": "0.1.0",
+    "description": "Documentação simplificada para os endpoints principais do MoneyMap."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Desenvolvimento" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Autenticação de usuários" },
+    { "name": "Accounts", "description": "Contas financeiras" },
+    { "name": "Transactions", "description": "Transações" },
+    { "name": "Reports", "description": "Relatórios financeiros" },
+    { "name": "Dashboard", "description": "Painel consolidado" },
+    { "name": "Notifications", "description": "Alertas e comunicados do usuário" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "color": { "type": "string" },
+          "isDefault": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "accountId": { "type": "integer" },
+          "descricao": { "type": "string" },
+          "categoria": { "type": "string" },
+          "valor": { "type": "number", "format": "double" },
+          "tipo": { "type": "string", "enum": ["receita", "despesa"] },
+          "status": { "type": "string", "enum": ["confirmado", "pendente"] },
+          "data": { "type": "string", "format": "date" }
+        }
+      },
+      "TransactionImportItem": {
+        "type": "object",
+        "properties": {
+          "row": { "type": "integer", "nullable": true },
+          "message": { "type": "string" }
+        }
+      },
+      "TransactionImportResponse": {
+        "type": "object",
+        "properties": {
+          "processed": { "type": "integer" },
+          "imported": { "type": "integer" },
+          "ignored": { "type": "integer" },
+          "duplicates": { "type": "integer" },
+          "adjustedSigns": { "type": "integer" },
+          "warnings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TransactionImportItem" }
+          },
+          "errors": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TransactionImportItem" }
+          }
+        }
+      },
+      "RecurringTransaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "descricao": { "type": "string" },
+          "valor": { "type": "number", "format": "double" },
+          "tipo": { "type": "string", "enum": ["receita", "despesa"] },
+          "status": { "type": "string", "enum": ["confirmado", "pendente"] },
+          "categoria": { "type": "string" },
+          "accountId": { "type": "integer" },
+          "categoryId": { "type": ["integer", "null"] },
+          "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+          "interval": { "type": "integer" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": ["string", "null"], "format": "date" },
+          "nextRun": { "type": ["string", "null"], "format": "date" },
+          "lastRun": { "type": ["string", "null"], "format": "date-time" },
+          "maxExecutions": { "type": ["integer", "null"] },
+          "executedCount": { "type": "integer" },
+          "autoAdjustDay": { "type": "boolean" },
+          "isActive": { "type": "boolean" },
+          "observacao": { "type": ["string", "null"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "account": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": { "type": "integer" },
+              "name": { "type": "string" },
+              "color": { "type": "string" },
+              "isDefault": { "type": "boolean" },
+              "archivedAt": { "type": ["string", "null"], "format": "date-time" }
+            }
+          },
+          "category": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "id": { "type": "integer" },
+              "name": { "type": "string" },
+              "color": { "type": "string" }
+            }
+          }
+        }
+      },
+      "RecurringTransactionPayload": {
+        "type": "object",
+        "required": ["descricao", "valor", "tipo", "accountId", "frequency", "startDate"],
+        "properties": {
+          "descricao": { "type": "string" },
+          "valor": { "type": "number", "format": "double" },
+          "tipo": { "type": "string", "enum": ["receita", "despesa"] },
+          "status": { "type": "string", "enum": ["confirmado", "pendente"], "default": "confirmado" },
+          "categoria": { "type": "string" },
+          "categoryId": { "type": "integer" },
+          "observacao": { "type": "string" },
+          "accountId": { "type": "integer" },
+          "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+          "interval": { "type": "integer", "default": 1 },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "maxExecutions": { "type": "integer" },
+          "autoAdjustDay": { "type": "boolean" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "RecurringTransactionUpdatePayload": {
+        "type": "object",
+        "properties": {
+          "descricao": { "type": "string" },
+          "valor": { "type": "number", "format": "double" },
+          "tipo": { "type": "string", "enum": ["receita", "despesa"] },
+          "status": { "type": "string", "enum": ["confirmado", "pendente"] },
+          "categoria": { "type": "string" },
+          "categoryId": { "type": "integer" },
+          "observacao": { "type": "string" },
+          "accountId": { "type": "integer" },
+          "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "yearly"] },
+          "interval": { "type": "integer" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "maxExecutions": { "type": "integer" },
+          "autoAdjustDay": { "type": "boolean" }
+        }
+      },
+      "RecurringProcessResponse": {
+        "type": "object",
+        "properties": {
+          "processed": { "type": "integer" }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { "type": "string", "enum": ["system", "transaction", "recurring", "budget", "goal", "reminder"] },
+          "severity": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+          "actionUrl": { "type": ["string", "null"] },
+          "metadata": { "type": ["object", "null"], "additionalProperties": true },
+          "read": { "type": "boolean" },
+          "readAt": { "type": ["string", "null"], "format": "date-time" },
+          "expiresAt": { "type": ["string", "null"], "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NotificationCreatePayload": {
+        "type": "object",
+        "required": ["title", "message"],
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { "type": "string", "enum": ["system", "transaction", "recurring", "budget", "goal", "reminder"] },
+          "severity": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+          "actionUrl": { "type": "string" },
+          "metadata": { "type": ["object", "string"], "additionalProperties": true },
+          "expiresAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Verifica o status do serviço",
+        "responses": {
+          "200": {
+            "description": "Aplicação e banco disponíveis"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Listar notificações",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["all", "read", "unread"], "default": "all" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1 }
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de notificações do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notifications": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Notification" }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "perPage": { "type": "integer" },
+                        "totalPages": { "type": "integer" },
+                        "unreadCount": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Criar notificação manual",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NotificationCreatePayload" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notificação criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": { "$ref": "#/components/schemas/Notification" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/mark-all-read": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marcar todas como lidas",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Quantidade marcada como lida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{id}/read": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marcar como lida",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificação atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": { "$ref": "#/components/schemas/Notification" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Notificação não encontrada" }
+        }
+      }
+    },
+    "/notifications/{id}/unread": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marcar como não lida",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificação atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notification": { "$ref": "#/components/schemas/Notification" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Notificação não encontrada" }
+        }
+      }
+    },
+    "/notifications/{id}": {
+      "delete": {
+        "tags": ["Notifications"],
+        "summary": "Remover notificação",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Removida" },
+          "404": { "description": "Notificação não encontrada" }
+        }
+      }
+    },
+    "/transacoes/recorrentes": {
+      "get": {
+        "tags": ["Transactions"],
+        "summary": "Listar transações recorrentes",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de transações recorrentes cadastradas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recurringTransactions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/RecurringTransaction" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Criar transação recorrente",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RecurringTransactionUpdatePayload" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transação recorrente cadastrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recurringTransaction": { "$ref": "#/components/schemas/RecurringTransaction" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Conta ou categoria não encontrada" },
+          "422": { "description": "Dados inválidos" }
+        }
+      }
+    },
+    "/transacoes/recorrentes/{id}": {
+      "put": {
+        "tags": ["Transactions"],
+        "summary": "Atualizar transação recorrente",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RecurringTransactionPayload" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transação recorrente atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recurringTransaction": { "$ref": "#/components/schemas/RecurringTransaction" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Transação recorrente não encontrada" },
+          "422": { "description": "Dados inválidos" }
+        }
+      },
+      "delete": {
+        "tags": ["Transactions"],
+        "summary": "Desativar transação recorrente",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Transação recorrente desativada" },
+          "404": { "description": "Transação recorrente não encontrada" }
+        }
+      }
+    },
+    "/transacoes/recorrentes/{id}/executar": {
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Executar uma recorrência em aberto",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quantidade de lançamentos gerados",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecurringProcessResponse" }
+              }
+            }
+          },
+          "404": { "description": "Transação recorrente não encontrada" }
+        }
+      }
+    },
+    "/transacoes/recorrentes/processar": {
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Executar todas as recorrências vencidas",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Total de transações geradas",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RecurringProcessResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Cadastrar novo usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Usuário criado" },
+          "409": { "description": "E-mail já cadastrado" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Autenticação básica",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login bem-sucedido" },
+          "401": { "description": "Credenciais inválidas" }
+        }
+      }
+    },
+    "/accounts": {
+      "get": {
+        "tags": ["Accounts"],
+        "summary": "Listar contas do usuário logado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Lista de contas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accounts": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Account" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Accounts"],
+        "summary": "Criar conta",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "color"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "color": { "type": "string" },
+                  "isDefault": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Conta criada" }
+        }
+      }
+    },
+    "/accounts/{id}": {
+      "put": {
+        "tags": ["Accounts"],
+        "summary": "Atualizar conta",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Conta atualizada" },
+          "404": { "description": "Conta não encontrada" }
+        }
+      },
+      "delete": {
+        "tags": ["Accounts"],
+        "summary": "Remover conta",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Conta removida" }
+        }
+      }
+    },
+    "/transacoes": {
+      "get": {
+        "tags": ["Transactions"],
+        "summary": "Listar transações",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "accountId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "tipo", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de transações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Transaction" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Criar transação",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Transação criada" }
+        }
+      }
+    },
+    "/transacoes/import": {
+      "post": {
+        "tags": ["Transactions"],
+        "summary": "Importar transações via CSV",
+        "description": "Processa um arquivo CSV (até 1000 linhas) e cria transações em lote. Campos reconhecidos: descrição, valor, data, tipo, categoria, status, conta, observação.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Arquivo CSV contendo as linhas a importar."
+                  },
+                  "accountId": {
+                    "type": "integer",
+                    "description": "Conta padrão a ser utilizada quando a conta não for encontrada na linha."
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["confirmado", "pendente"],
+                    "description": "Status padrão das transações importadas (padrão: confirmado)."
+                  },
+                  "defaultTipo": {
+                    "type": "string",
+                    "enum": ["auto", "receita", "despesa"],
+                    "description": "Comportamento padrão para determinar o tipo quando não identificado."
+                  },
+                  "defaultCategoria": {
+                    "type": "string",
+                    "description": "Categoria a ser usada quando nenhuma for encontrada na linha."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Importação processada com sucesso.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TransactionImportResponse" }
+              }
+            }
+          },
+          "400": { "description": "CSV inválido ou não legível." },
+          "404": { "description": "Conta informada não encontrada." },
+          "413": { "description": "Limite máximo de linhas excedido." },
+          "422": { "description": "Dados inválidos ou nenhuma linha válida." }
+        }
+      }
+    },
+    "/relatorios/totais": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Resumo de totais financeiros",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["3meses", "6meses", "1ano"] },
+            "description": "Janela de análise (padrão: 6meses)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Totais calculados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": { "type": "object" },
+                    "totals": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/relatorios/mensal": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Séries mensais de receitas, despesas e saldo",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["3meses", "6meses", "1ano"] },
+            "description": "Janela de análise (padrão: 6meses)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados mensais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": { "type": "object" },
+                    "receitasVsDespesas": { "type": "array" },
+                    "evolucaoSaldo": { "type": "array" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/relatorios/categorias": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Despesas agrupadas por categoria",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["3meses", "6meses", "1ano"] },
+            "description": "Janela de análise (padrão: 6meses)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categorias calculadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": { "type": "object" },
+                    "categorias": { "type": "array" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    ,
+    "/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Resumo consolidado para o painel",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "periodo",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["3meses", "6meses", "1ano"] },
+            "description": "Janela analisada (padrão: 6meses)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados consolidados do dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "period": { "type": "object" },
+                    "totals": { "type": "object" },
+                    "receitasVsDespesas": { "type": "array" },
+                    "evolucaoSaldo": { "type": "array" },
+                    "categorias": { "type": "array" },
+                    "contas": { "type": "array" },
+                    "transacoesRecentes": { "type": "array" },
+                    "goalResumo": { "type": ["object", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

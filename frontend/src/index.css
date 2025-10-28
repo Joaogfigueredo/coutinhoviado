@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* seu CSS abaixo pode continuar igual */
+:root {
+  --cor-primario: #10b981;
+  --cor-secundario: #0ea5e9;
+  --cor-neutro: #111827;
+  --app-background: #f8fafc;
+  --app-surface: #ffffff;
+  --app-foreground: #0f172a;
+  --sb-track: 0 0% 98%;
+  --sb-thumb: 0 0% 80%;
+}
+
+html.dark {
+  --app-background: #020617;
+  --app-surface: #0f172a;
+  --app-foreground: #f8fafc;
+  --sb-track: 240 6% 10%;
+  --sb-thumb: 240 4% 28%;
+}
+
+* {
+  scrollbar-color: hsl(var(--sb-thumb)) hsl(var(--sb-track));
+}
+
+html, body, #root { 
+  height: 100%; 
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--app-background);
+  color: var(--app-foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark body,
+body.dark {
+  background-color: var(--app-background);
+  color: var(--app-foreground);
+}
+
+#root {
+  min-height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container-app {
+  /* layout utilitário base quando tailwind não está disponível */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--app-background);
+  color: var(--app-foreground);
+}
+
+html.dark .container-app,
+body.dark .container-app,
+body[data-theme='dark'] .container-app {
+  background-color: var(--app-background);
+  color: var(--app-foreground);
+}
+
+.layout-principal {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  gap: 1rem;
+  padding: 1rem 1rem;
+}
+
+html.dark .layout-principal,
+body.dark .layout-principal,
+body[data-theme='dark'] .layout-principal {
+  color: var(--app-foreground);
+}
+
+@media (min-width: 768px) {
+  .layout-principal {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+.card {
+  background-color: var(--app-surface);
+  border-radius: 0.75rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 10px 25px -15px rgba(15, 23, 42, 0.25);
+}
+
+html.dark .card,
+body.dark .card,
+body[data-theme='dark'] .card {
+  background-color: var(--app-surface);
+  border-color: rgba(94, 234, 212, 0.08);
+  box-shadow: 0 20px 35px -25px rgba(15, 23, 42, 0.9);
+}
+
+.titulo-secao {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--app-foreground);
+}
+
+html.dark .titulo-secao,
+body.dark .titulo-secao,
+body[data-theme='dark'] .titulo-secao {
+  color: var(--app-foreground);
+}
+
+/* Animações para Mini Curso */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

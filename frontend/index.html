@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MoneyMapp - Educação Financeira" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>MoneyMapp</title>
+    <!-- Aplica tema ANTES do React montar -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('moneymap-theme')
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          var enableDark = stored === 'dark' || (!stored && prefersDark)
+
+          var root = document.documentElement
+          root.classList.remove('dark', 'light')
+          root.classList.add(enableDark ? 'dark' : 'light')
+          root.style.colorScheme = enableDark ? 'dark' : 'light'
+          root.dataset.theme = enableDark ? 'dark' : 'light'
+
+          // Variáveis úteis para áreas sem Tailwind
+          root.style.setProperty('--app-background', enableDark ? '#020617' : '#f8fafc')
+          root.style.setProperty('--app-surface', enableDark ? '#0f172a' : '#ffffff')
+          root.style.setProperty('--app-foreground', enableDark ? '#f8fafc' : '#0f172a')
+
+          if (document.body) {
+            document.body.classList.remove('dark', 'light')
+            document.body.classList.add(enableDark ? 'dark' : 'light')
+            document.body.dataset.theme = enableDark ? 'dark' : 'light'
+            document.body.style.backgroundColor = enableDark ? '#020617' : '#f8fafc'
+            document.body.style.color = enableDark ? '#f8fafc' : '#0f172a'
+          }
+        } catch (err) {
+          console.warn('Tema inicial não pôde ser aplicado de forma antecipada.', err)
+        }
+      })()
+    </script>
+  </head>
+  <body class="bg-gray-50 text-gray-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+  </html>

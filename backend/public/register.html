@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-br">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teste de Cadastro — MoneyMapp</title>
+  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; max-width: 720px;">
+    <h1>Teste de Cadastro</h1>
+    <p>Esta página envia um POST para <code>/auth/register</code> no mesmo servidor.</p>
+    <form id="form">
+      <label>Nome<br><input id="name" required></label><br><br>
+      <label>E-mail<br><input id="email" type="email" required></label><br><br>
+      <label>Senha<br><input id="password" type="password" minlength="8" required></label><br><br>
+      <label>Avatar URL (opcional)<br><input id="avatarUrl" type="url"></label><br><br>
+      <button type="submit">Cadastrar</button>
+    </form>
+    <h2>Resposta</h2>
+    <pre id="out" style="background:#f7f7f7; padding:12px; border:1px solid #ddd; white-space:pre-wrap;"></pre>
+
+    <script>
+      const $ = sel => document.querySelector(sel);
+      $("#form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+          name: $("#name").value,
+          email: $("#email").value,
+          password: $("#password").value,
+          avatarUrl: $("#avatarUrl").value || undefined
+        };
+        try {
+          const res = await fetch("/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          $("#out").textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          $("#out").textContent = "Erro ao chamar API: " + err?.message;
+        }
+      });
+    </script>
+    <p><a href="/">Voltar</a></p>
+  </body>
+</html>
